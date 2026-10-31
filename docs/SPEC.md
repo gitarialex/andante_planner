@@ -34,6 +34,7 @@ A personal, offline-first task planner for Android, with plans, notes, colour-co
 | 14\. Risks and mitigations               | What could go wrong and how it is handled                                           |
 | 15\. Deferred features                   | Everything deliberately left out of v1                                              |
 | 16\. Assumptions to revisit              | Interpretations to confirm before building                                          |
+| 17\. Resolved decisions                  | Decisions settled from the milestone prompts                                        |
 | Appendix A to D                          | Glossary, example backup file, worked reminder examples, reliability spike plan     |
 
 *Tip: in Word, open the Navigation pane (View, Navigation Pane) to jump between sections and subsections.*
@@ -330,6 +331,10 @@ Medium is the default when no priority is chosen. High, medium and low all-day t
 
 - When an occurrence is completed, the task advances to the first occurrence that falls after today, and the completed occurrence is written to the completion history.
 
+- Completing a task before its due date still advances to the first occurrence after today; this can skip a candidate date that has not yet arrived.
+
+- Undo for a recurring task reverses only its most recent completion. It restores the due date to that completion's occurrence date, removes the corresponding `done` history row, regenerates reminders and resets nudge counters. If that completion ended the series and archived the task, Undo reopens it (see Section 5.10).
+
 - If an occurrence is missed, the task stays overdue (and nudges up to the cap) until the next occurrence date arrives. Then it rolls forward to the occurrence that has just arrived (the first occurrence on or after today) and the missed occurrence is recorded in the history as missed.
 
 - When no occurrence remains before the end date, completing the task finishes the series and the task is archived like any other completed task.
@@ -355,6 +360,8 @@ Medium is the default when no priority is chosen. High, medium and low all-day t
 - Completing a task shows an Undo snackbar and moves the task into the Completed today section.
 
 - Undo remains available for 24 hours from the Completed section. After that, completed tasks can still be restored from the archive.
+
+- For a recurring task, Undo applies only to the most recent completion. It reads the latest `done` row in CompletionHistory for that task, restores `dueDate` to the row's occurrence date, deletes the row, regenerates reminders and resets nudge counters. If the completion ended the series and the task was archived, Undo reopens it. No new field is needed.
 
 - A completed task moves to the archive 7 days after completion. Restoring reopens it with its original due date, so it may be overdue; the app then offers to reschedule.
 
@@ -1244,7 +1251,7 @@ Instead of registering one Android alarm per reminder, the engine keeps every fu
 
 - Anchor the rule on the task's current due date and apply interval, weekdays and type to produce candidate dates.
 
-- On completion, the next due date is the first candidate after today that is not after the end date. If none exists, the series ends.
+- On completion, the next due date is the first candidate after today that is not after the end date. This also applies when completing before the due date, so candidate dates not after today are skipped. If none exists, the series ends.
 
 - When a missed occurrence's next candidate date arrives, the roll-forward event moves the task to that occurrence (the first candidate on or after today) and records a missed occurrence in the history.
 
@@ -1454,18 +1461,30 @@ Deliberately outside v1. Moving any of these into scope means updating this docu
 
 Interpretations made while compiling the plan. Each is reasonable but was not stated outright; confirm or change them before building.
 
-| **\#** | **Assumption**                                                                                                                                        |
-|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1      | High, medium and low all-day tasks get only the 6:00 a.m. reminder on the due day (Section 5.1).                                                      |
-| 2      | Critical timed tasks use the 1 day, 3 hours, 30 minutes and at-due-time schedule; the 8:00 p.m. and 6:00 a.m. pair applies to critical all-day tasks. |
-| 3      | Quick-add "all-day by default" means all-day on today's date.                                                                                         |
-| 4      | The Notes tab "+" creates a note; on the other tabs it opens quick add.                                                                               |
-| 5      | Lock-screen notifications show task titles (the system default). A privacy option could hide them later.                                              |
-| 6      | The weekly review screen contents in Section 7.3.19 were proposed, not specified by the user.                                                         |
-| 7      | A snoozed reminder does not count as a nudge and does not change the due date.                                                                        |
-| 8      | Android's no-prompt exact-alarm permission is acceptable for a personal install; to be confirmed in the spike.                                        |
-| 9      | The minimum Android version is undecided until the spike.                                                                                             |
-| 10     | Dark theme colours are defined during polish, derived from the same seed.                                                                             |
+| **\#** | **Assumption**                                                                                                                                        | **Status** |
+|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| 1      | High, medium and low all-day tasks get only the 6:00 a.m. reminder on the due day (Section 5.1).                                                      | Confirmed  |
+| 2      | Critical timed tasks use the 1 day, 3 hours, 30 minutes and at-due-time schedule; the 8:00 p.m. and 6:00 a.m. pair applies to critical all-day tasks. | Confirmed  |
+| 3      | Quick-add "all-day by default" means all-day on today's date.                                                                                         | Confirmed  |
+| 4      | The Notes tab "+" creates a note; on the other tabs it opens quick add.                                                                               | Confirmed  |
+| 5      | Lock-screen notifications show task titles (the system default). A privacy option could hide them later.                                              | Confirmed  |
+| 6      | The weekly review screen contents in Section 7.3.19 were proposed, not specified by the user.                                                         | Confirmed  |
+| 7      | A snoozed reminder does not count as a nudge and does not change the due date.                                                                        | Confirmed  |
+| 8      | Android's no-prompt exact-alarm permission is acceptable for a personal install; to be confirmed in the spike.                                        | Open       |
+| 9      | The minimum Android version is undecided until the spike.                                                                                             | Open       |
+| 10     | Dark theme colours are defined during polish, derived from the same seed.                                                                             | Open       |
+
+# 17. Resolved decisions
+
+| **ID** | **Question** | **Decision** | **Spec sections affected** |
+|--------|--------------|--------------|----------------------------|
+| R-01 | Undo on a recurring task after it has rolled to its next occurrence | Undo reverses only the most recent completion using its latest `done` CompletionHistory row; restores the due date to that occurrence date; removes the row; regenerates reminders and resets nudge counters. If the completion ended the series, Undo reopens the archived task. No new field is needed. | 5.7, 5.10 |
+| R-02 | Minimum Android version | Deferred to after M0. | 9.1, 16 |
+| R-03 | Dark theme colours | Deferred to M7. | 10.1, 16 |
+| R-04 | UI component library | Deferred to M0. | 9.1, 13 |
+| R-05 | Assumptions 1 to 7 | Confirmed as written. | 5.1, 5.2, 5.6, 7.1, 7.3.3, 7.3.12, 7.3.19, 7.3.23, 8.3, 16 |
+| R-06 | Assumptions 8 and 9 (no-prompt exact alarms; minimum Android) | Deferred to M0. | 9.1, 9.6, 16 |
+| R-07 | Completing a recurring task early | Accepted: completing early advances to the first candidate after today, even if that skips a candidate date that has not yet arrived. | 5.7, 9.5 |
 
 # Appendix A. Glossary
 
