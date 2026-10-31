@@ -1470,21 +1470,23 @@ Interpretations made while compiling the plan. Each is reasonable but was not st
 | 5      | Lock-screen notifications show task titles (the system default). A privacy option could hide them later.                                              | Confirmed  |
 | 6      | The weekly review screen contents in Section 7.3.19 were proposed, not specified by the user.                                                         | Confirmed  |
 | 7      | A snoozed reminder does not count as a nudge and does not change the due date.                                                                        | Confirmed  |
-| 8      | Android's no-prompt exact-alarm permission is acceptable for a personal install; to be confirmed in the spike.                                        | Open       |
-| 9      | The minimum Android version is undecided until the spike.                                                                                             | Open       |
-| 10     | Dark theme colours are defined during polish, derived from the same seed.                                                                             | Open       |
+| 8      | Exact-alarm access is granted once by the user through a system settings screen, not silently. The app guides this in onboarding and detects later revocation (see R-06).  | Revised    |
+| 9      | The minimum Android version is the lowest version the chosen Expo SDK supports. Verified on Android 16 only so far (see R-02).                                            | Resolved   |
+| 10     | Dark theme colours are defined during polish, derived from the same seed.                                                                                                  | Open       |
 
 # 17. Resolved decisions
 
 | **ID** | **Question** | **Decision** | **Spec sections affected** |
 |--------|--------------|--------------|----------------------------|
-| R-01 | Undo on a recurring task after it has rolled to its next occurrence | Undo reverses only the most recent completion using its latest `done` CompletionHistory row; restores the due date to that occurrence date; removes the row; regenerates reminders and resets nudge counters. If the completion ended the series, Undo reopens the archived task. No new field is needed. | 5.7, 5.10 |
-| R-02 | Minimum Android version | Deferred to after M0. | 9.1, 16 |
-| R-03 | Dark theme colours | Deferred to M7. | 10.1, 16 |
-| R-04 | UI component library | Deferred to M0. | 9.1, 13 |
-| R-05 | Assumptions 1 to 7 | Confirmed as written. | 5.1, 5.2, 5.6, 7.1, 7.3.3, 7.3.12, 7.3.19, 7.3.23, 8.3, 16 |
-| R-06 | Assumptions 8 and 9 (no-prompt exact alarms; minimum Android) | Deferred to M0. | 9.1, 9.6, 16 |
-| R-07 | Completing a recurring task early | Accepted: completing early advances to the first candidate after today, even if that skips a candidate date that has not yet arrived. | 5.7, 9.5 |
+| R-01 | Undo on a recurring task after it has rolled to its next occurrence | (unchanged) | 5.7, 5.10 |
+| R-02 | Minimum Android version | The minimum is the lowest version the chosen Expo SDK supports. Read `minSdkVersion` from the project's Gradle config at the start of M1 and record the number here: 24. The spike verified Android 16 only (vivo V50). Behaviour that differs by Android version (notification permission from Android 13, exact-alarm permission rules changed in Android 12 and 14) is handled with version checks and tested on older Android versions in M2 and M7. | 9.1, 16 |
+| R-03 | Dark theme colours | (unchanged: deferred to M7) | 10.1, 16 |
+| R-04 | UI component library | Not evaluated in M0. Deferred to the start of M3, before the first UI milestone. Fallback if no library fits: own components driven by theme tokens. | 9.1, 13 |
+| R-05 | Assumptions 1 to 7 | (unchanged) | (unchanged) |
+| R-06 | Exact-alarm access and permissions | Spike passed on Android 16 (vivo V50): the app sends the user to a system settings screen to grant exact-alarm access; notification and exact-alarm status can be requested and read back. Permission used: SCHEDULE_EXACT_ALARM (confirm `SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM` from AndroidManifest.xml). Onboarding must explain the settings step, and the health check must detect later revocation. | 9.1, 9.6, 16 |
+| R-07 | Completing a recurring task early | (unchanged) | 5.7, 9.5 |
+| R-08 | Battery restrictions and OEM behaviour | The health check reads power-saver, app-restriction and battery-exemption status. On the vivo V50 (Android 16), alarms fired on time with exemption not granted, but in a dev build while charging, which is not sufficient evidence. Onboarding still asks for the battery exemption and the health check still reports it. Re-verify on an unplugged release build before M2 sign-off. | 9.6, 14 |
+| R-09 | Widget technology (Glance vs RemoteViews) | Jetpack Glance (1.1.1 in the spike). Spike test 7 passed on Android 16 (vivo V50) after moving the Room read off the main thread: the widget shows a task, Complete changes its status, and the app agrees. RemoteViews is not needed. All database access from widget code must run off the main thread. | 7.3, 9.1, 13 |
 
 # Appendix A. Glossary
 
