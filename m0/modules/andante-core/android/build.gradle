@@ -1,0 +1,28 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+  id 'org.jetbrains.kotlin.kapt'
+  id 'org.jetbrains.kotlin.plugin.compose' version '2.2.10'
+}
+
+group = 'expo.modules.andantecore'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.andantecore"
+  defaultConfig {
+    minSdkVersion 24
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation "androidx.room:room-runtime:2.8.4"
+  implementation "androidx.room:room-ktx:2.8.4"
+  kapt "androidx.room:room-compiler:2.8.4"
+  implementation "androidx.glance:glance-appwidget:1.1.1"
+  implementation "androidx.glance:glance-material3:1.1.1"
+  testImplementation "junit:junit:4.13.2"
+}
