@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object WidgetUpdater {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -34,7 +35,9 @@ object WidgetUpdater {
 
 class TestTaskWidget : GlanceAppWidget() {
   override suspend fun provideGlance(context: Context, id: GlanceId) {
-    val task = SpikeDatabase.get(context).dao().getTasks().firstOrNull { it.status == "open" }
+    val task = withContext(Dispatchers.IO) {
+      SpikeDatabase.get(context).dao().getTasks().firstOrNull { it.status == "open" }
+    }
     provideContent {
       Column {
         Text(task?.title ?: "No open spike tasks")
