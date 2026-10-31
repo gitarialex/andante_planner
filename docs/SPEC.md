@@ -34,6 +34,7 @@ A personal, offline-first task planner for Android, with plans, notes, colour-co
 | 14\. Risks and mitigations               | What could go wrong and how it is handled                                           |
 | 15\. Deferred features                   | Everything deliberately left out of v1                                              |
 | 16\. Assumptions to revisit              | Interpretations to confirm before building                                          |
+| 17\. Resolved decisions                  | Decisions settled from the milestone prompts                                        |
 | Appendix A to D                          | Glossary, example backup file, worked reminder examples, reliability spike plan     |
 
 *Tip: in Word, open the Navigation pane (View, Navigation Pane) to jump between sections and subsections.*
@@ -330,6 +331,10 @@ Medium is the default when no priority is chosen. High, medium and low all-day t
 
 - When an occurrence is completed, the task advances to the first occurrence that falls after today, and the completed occurrence is written to the completion history.
 
+- Completing a task before its due date still advances to the first occurrence after today; this can skip a candidate date that has not yet arrived.
+
+- Undo for a recurring task reverses only its most recent completion. It restores the due date to that completion's occurrence date, removes the corresponding `done` history row, regenerates reminders and resets nudge counters. If that completion ended the series and archived the task, Undo reopens it (see Section 5.10).
+
 - If an occurrence is missed, the task stays overdue (and nudges up to the cap) until the next occurrence date arrives. Then it rolls forward to the occurrence that has just arrived (the first occurrence on or after today) and the missed occurrence is recorded in the history as missed.
 
 - When no occurrence remains before the end date, completing the task finishes the series and the task is archived like any other completed task.
@@ -355,6 +360,8 @@ Medium is the default when no priority is chosen. High, medium and low all-day t
 - Completing a task shows an Undo snackbar and moves the task into the Completed today section.
 
 - Undo remains available for 24 hours from the Completed section. After that, completed tasks can still be restored from the archive.
+
+- For a recurring task, Undo applies only to the most recent completion. It reads the latest `done` row in CompletionHistory for that task, restores `dueDate` to the row's occurrence date, deletes the row, regenerates reminders and resets nudge counters. If the completion ended the series and the task was archived, Undo reopens it. No new field is needed.
 
 - A completed task moves to the archive 7 days after completion. Restoring reopens it with its original due date, so it may be overdue; the app then offers to reschedule.
 
@@ -1244,7 +1251,7 @@ Instead of registering one Android alarm per reminder, the engine keeps every fu
 
 - Anchor the rule on the task's current due date and apply interval, weekdays and type to produce candidate dates.
 
-- On completion, the next due date is the first candidate after today that is not after the end date. If none exists, the series ends.
+- On completion, the next due date is the first candidate after today that is not after the end date. This also applies when completing before the due date, so candidate dates not after today are skipped. If none exists, the series ends.
 
 - When a missed occurrence's next candidate date arrives, the roll-forward event moves the task to that occurrence (the first candidate on or after today) and records a missed occurrence in the history.
 
@@ -1454,18 +1461,32 @@ Deliberately outside v1. Moving any of these into scope means updating this docu
 
 Interpretations made while compiling the plan. Each is reasonable but was not stated outright; confirm or change them before building.
 
-| **\#** | **Assumption**                                                                                                                                        |
-|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1      | High, medium and low all-day tasks get only the 6:00 a.m. reminder on the due day (Section 5.1).                                                      |
-| 2      | Critical timed tasks use the 1 day, 3 hours, 30 minutes and at-due-time schedule; the 8:00 p.m. and 6:00 a.m. pair applies to critical all-day tasks. |
-| 3      | Quick-add "all-day by default" means all-day on today's date.                                                                                         |
-| 4      | The Notes tab "+" creates a note; on the other tabs it opens quick add.                                                                               |
-| 5      | Lock-screen notifications show task titles (the system default). A privacy option could hide them later.                                              |
-| 6      | The weekly review screen contents in Section 7.3.19 were proposed, not specified by the user.                                                         |
-| 7      | A snoozed reminder does not count as a nudge and does not change the due date.                                                                        |
-| 8      | Android's no-prompt exact-alarm permission is acceptable for a personal install; to be confirmed in the spike.                                        |
-| 9      | The minimum Android version is undecided until the spike.                                                                                             |
-| 10     | Dark theme colours are defined during polish, derived from the same seed.                                                                             |
+| **\#** | **Assumption**                                                                                                                                        | **Status** |
+|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| 1      | High, medium and low all-day tasks get only the 6:00 a.m. reminder on the due day (Section 5.1).                                                      | Confirmed  |
+| 2      | Critical timed tasks use the 1 day, 3 hours, 30 minutes and at-due-time schedule; the 8:00 p.m. and 6:00 a.m. pair applies to critical all-day tasks. | Confirmed  |
+| 3      | Quick-add "all-day by default" means all-day on today's date.                                                                                         | Confirmed  |
+| 4      | The Notes tab "+" creates a note; on the other tabs it opens quick add.                                                                               | Confirmed  |
+| 5      | Lock-screen notifications show task titles (the system default). A privacy option could hide them later.                                              | Confirmed  |
+| 6      | The weekly review screen contents in Section 7.3.19 were proposed, not specified by the user.                                                         | Confirmed  |
+| 7      | A snoozed reminder does not count as a nudge and does not change the due date.                                                                        | Confirmed  |
+| 8      | Exact-alarm access is granted once by the user through a system settings screen, not silently. The app guides this in onboarding and detects later revocation (see R-06).  | Revised    |
+| 9      | The minimum Android version is the lowest version the chosen Expo SDK supports. Verified on Android 16 only so far (see R-02).                                            | Resolved   |
+| 10     | Dark theme colours are defined during polish, derived from the same seed.                                                                                                  | Open       |
+
+# 17. Resolved decisions
+
+| **ID** | **Question** | **Decision** | **Spec sections affected** |
+|--------|--------------|--------------|----------------------------|
+| R-01 | Undo on a recurring task after it has rolled to its next occurrence | (unchanged) | 5.7, 5.10 |
+| R-02 | Minimum Android version | The minimum is the lowest version the chosen Expo SDK supports. Read `minSdkVersion` from the project's Gradle config at the start of M1 and record the number here: 24. The spike verified Android 16 only (vivo V50). Behaviour that differs by Android version (notification permission from Android 13, exact-alarm permission rules changed in Android 12 and 14) is handled with version checks and tested on older Android versions in M2 and M7. | 9.1, 16 |
+| R-03 | Dark theme colours | (unchanged: deferred to M7) | 10.1, 16 |
+| R-04 | UI component library | Not evaluated in M0. Deferred to the start of M3, before the first UI milestone. Fallback if no library fits: own components driven by theme tokens. | 9.1, 13 |
+| R-05 | Assumptions 1 to 7 | (unchanged) | (unchanged) |
+| R-06 | Exact-alarm access and permissions | Spike passed on Android 16 (vivo V50): the app sends the user to a system settings screen to grant exact-alarm access; notification and exact-alarm status can be requested and read back. Permission used: SCHEDULE_EXACT_ALARM (confirm `SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM` from AndroidManifest.xml). Onboarding must explain the settings step, and the health check must detect later revocation. | 9.1, 9.6, 16 |
+| R-07 | Completing a recurring task early | (unchanged) | 5.7, 9.5 |
+| R-08 | Battery restrictions and OEM behaviour | The health check reads power-saver, app-restriction and battery-exemption status. On the vivo V50 (Android 16), alarms fired on time with exemption not granted, but in a dev build while charging, which is not sufficient evidence. Onboarding still asks for the battery exemption and the health check still reports it. Re-verify on an unplugged release build before M2 sign-off. | 9.6, 14 |
+| R-09 | Widget technology (Glance vs RemoteViews) | Jetpack Glance (1.1.1 in the spike). Spike test 7 passed on Android 16 (vivo V50) after moving the Room read off the main thread: the widget shows a task, Complete changes its status, and the app agrees. RemoteViews is not needed. All database access from widget code must run off the main thread. | 7.3, 9.1, 13 |
 
 # Appendix A. Glossary
 

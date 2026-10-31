@@ -18,6 +18,10 @@ Andante Planner is a personal, offline-first task planner for Android (iOS later
 5. `scheduled_event` is derived data. It can always be deleted and rebuilt from tasks, reminders, settings and the clock. Keep **one** exact alarm registered, for the earliest pending event. Every event has an id and a state so duplicate broadcasts never show a notification twice.
 6. Overdue is calculated from the due date and the clock. It is never stored.
 7. IDs are UUID strings. Every schema change ships a tested migration.
+8. **Never access Room on the main thread.** Use suspend DAO functions or
+   Dispatchers.IO everywhere, including widget providers, receivers and
+   notification action callbacks. For work that must outlive a BroadcastReceiver's
+   onReceive, use goAsync() or WorkManager (check current Android docs).
 
 ## Behaviour rules that are easy to get wrong
 - Priorities: critical, high, medium (default), low. Colours: #B3261E, #C2570C, #2B63C4, #3F7A47. Priority is never shown by colour alone.
